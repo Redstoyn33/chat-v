@@ -34,7 +34,6 @@ fn event(e &tui.Event, x voidptr) {
 				app.enter = ''
 			}
 			else {
-				if app.enter.len >= app.tui.window_width { return }
 				app.enter += e.utf8
 			}
 		}
