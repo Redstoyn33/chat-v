@@ -84,7 +84,7 @@ fn main() {
 			exit(1)
 		}
 	}
-	con.set_read_timeout(time.second)
+	con.set_read_timeout(time.second / 5)
 	mut app := &App{}
 	go con_hand(app.inp, app.out, mut con)
 	app.tui = tui.init(
