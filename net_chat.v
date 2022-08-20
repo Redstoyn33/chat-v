@@ -34,6 +34,7 @@ fn event(e &tui.Event, x voidptr) {
 				app.enter = ''
 			}
 			else {
+				if app.enter.len >= app.tui.window_width { return }
 				app.enter += e.utf8
 			}
 		}
@@ -55,7 +56,7 @@ fn frame(x voidptr) {
 		}
 		app.tui.draw_text(0, app.tui.window_height - 1 - i, app.buf[app.buf.len - 1 - i])
 	}
-	app.tui.draw_text(0, app.tui.window_height, app.enter + app.inp.len.str())
+	app.tui.draw_text(0, app.tui.window_height, app.enter )
 	app.tui.flush()
 }
 
@@ -108,8 +109,9 @@ fn con_hand(inp chan string, out chan string, mut con net.TcpConn) {
 			}
 			else {
 				mut num := []u8{len: 1}
-				i := con.read(mut num) or { continue }
-				mut buf := []u8{len: num[0]}
+				con.read(mut num) or { continue }
+				mut buf := []u8{len: int(num[0])}
+				con.read(mut buf) or { continue }
 				s := buf.bytestr()
 				inp.try_push(s)
 			}
