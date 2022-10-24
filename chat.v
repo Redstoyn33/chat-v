@@ -1,20 +1,33 @@
 import term.ui as tui
-import os { input }
+import os
 import net
 import time
 
-struct App {
+struct Chat {
 mut:
-	tui   &tui.Context = unsafe { 0 }
-	enter string
-	buf   []string    = []string{cap: 10}
-	inp   chan string = chan string{cap: 3}
-	out   chan string = chan string{cap: 1}
+	tui    &tui.Context = unsafe { 0 }
+	name   string
+	format string
+	text   string
+	buf    LoopArr
+	inp    chan Com
+	out    chan Com
+}
+
+fn (mut c Chat) start() {
+	c.tui = tui.init(
+		user_data: c
+		event_fn: event
+		frame_fn: frame
+		hide_cursor: false
+		frame_rate: 10
+	)
+	app.tui.run()?
 }
 
 fn event(e &tui.Event, x voidptr) {
 	if e.typ == .key_down {
-		mut app := &App(x)
+		mut c := &Chat(x)
 		match e.code {
 			.escape {
 				exit(0)
@@ -41,79 +54,46 @@ fn event(e &tui.Event, x voidptr) {
 }
 
 fn frame(x voidptr) {
-	mut app := &App(x)
-	select {
-		s := <-app.inp {
-			app.buf << '> ' + s
-		}
-		else {}
-	}
-	app.tui.clear()
-	for i in 0 .. app.tui.window_height {
-		if app.buf.len <= i {
-			break
-		}
-		app.tui.draw_text(0, app.tui.window_height - 1 - i, app.buf[app.buf.len - 1 - i])
-	}
-	app.tui.draw_text(0, app.tui.window_height, app.enter )
-	app.tui.flush()
+	mut c := &Chat(x)
+}
+
+struct LoopArr {
+	len int = 10
+mut:
+	arr []string = []string{cap: 10}
+	pos int      = 0
+}
+
+fn (a LoopArr) get(i int) string {
+	return a.arr[(a.pos + i) % a.len]
+}
+
+fn (mut a LoopArr) add(s string) {
+	a.pos = if a.pos == 0 { a.len - 1 } else { a.pos - 1 }
+	a.arr[a.pos] = s
+}
+
+type Com = Msg | Resp | Scan
+
+struct Msg {
+	name string
+	msg  string
+}
+
+struct Scan {
+	time int
+}
+
+struct Resp {
+	info Info
+}
+
+struct Info {
+	level u8
+	name  string
+	sub   []Info
 }
 
 fn main() {
-	h := input('enter для подключения, любой текст для хостинга - ')
-	mut con := &net.TcpConn(0)
-	if h.len == 0 {
-		adr := input('адрес подключения - ')
-		con = net.dial_tcp(adr) or {
-			println('неудалось соединится')
-			input('')
-			exit(1)
-		}
-	} else {
-		adr := input('порт хоста - ')
-		if !adr.contains_only('0123456789') {
-			println('неверный порт')
-			input('')
-			exit(1)
-		}
-		mut listener := net.listen_tcp(.ip, ':' + adr)?
-		listener.wait_for_accept()?
-		con = listener.accept() or {
-			println('неудалось соединится')
-			input('')
-			exit(1)
-		}
-	}
-	con.set_read_timeout(time.second / 5)
-	mut app := &App{}
-	go con_hand(app.inp, app.out, mut con)
-	app.tui = tui.init(
-		user_data: app
-		event_fn: event
-		frame_fn: frame
-		hide_cursor: false
-		frame_rate: 10
-	)
-	app.tui.run()?
-}
-
-fn con_hand(inp chan string, out chan string, mut con net.TcpConn) {
-	for {
-		select {
-			s := <-out {
-				b := s.bytes()
-				if b.len > 256 { continue }
-				con.write([u8(b.len)]) or { exit(1) }
-				con.write(b) or { exit(1) }
-			}
-			else {
-				mut num := []u8{len: 1}
-				con.read(mut num) or { continue }
-				mut buf := []u8{len: int(num[0])}
-				con.read(mut buf) or { continue }
-				s := buf.bytestr()
-				inp.try_push(s)
-			}
-		}
-	}
+	os
 }
