@@ -55,11 +55,13 @@ fn (mut n Net) start() {
 						if name.len > 255 {
 							continue
 						}
-						buf := [u8(name.len)]
+						mut buf := [u8(name.len)]
 						buf << name
 						buf << u8(msg.len)
 						buf << msg
+						write2all(buf)
 					}
+					else{}
 				}
 			}
 		}
@@ -68,17 +70,17 @@ fn (mut n Net) start() {
 
 fn (mut n Net) write2all(bytes []u8) {
 	n.mconn.write(bytes) or {}
-	for c in n.conns {
+	for mut c in n.conns {
 		c.write(bytes) or {}
 	}
 }
 
 fn (mut n Net) write2other(bytes []u8, con &TcpConn) {
-	if unsafe { n.mconn != con } {
+	if  usize(n.mconn) != usize(con) {
 		n.mconn.write(bytes) or {}
 	}
-	for c in n.conns {
-		if unsafe { c == con } {
+	for mut c in n.conns {
+		if  usize(c) == usize(con) {
 			continue
 		}
 		c.write(bytes) or {}
