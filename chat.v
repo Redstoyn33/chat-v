@@ -108,7 +108,7 @@ fn frame(x voidptr) {
 		}
 		c.tui.draw_text(0, c.tui.window_height - 1 - i, c.buf.get(c.buf.len - 1 - i))
 	}
-	c.tui.draw_text(0, c.tui.window_height, c.enter)
+	c.tui.draw_text(0, c.tui.window_height, c.text)
 	c.tui.flush()
 }
 
