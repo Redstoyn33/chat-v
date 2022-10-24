@@ -85,7 +85,7 @@ fn frame(x voidptr) {
 	mut c := &Chat(x)
 	for {
 		select {
-			s := <- c.inp {
+			s := <-c.inp {
 				match s {
 					Msg {
 						c.buf.add(c.format.replace_each(['%n', s.name, '%m', s.msg]))
@@ -93,7 +93,7 @@ fn frame(x voidptr) {
 					Resp {
 						s.info.print(mut c.buf, 0)
 					}
-					else{}
+					else {}
 				}
 			}
 			else {
@@ -108,12 +108,12 @@ fn frame(x voidptr) {
 		}
 		c.tui.draw_text(0, c.tui.window_height - 1 - i, c.buf.get(c.buf.len - 1 - i))
 	}
-	c.tui.draw_text(0, c.tui.window_height, c.enter )
+	c.tui.draw_text(0, c.tui.window_height, c.enter)
 	c.tui.flush()
 }
 
 fn (i Info) print(mut a LoopArr, tab int) {
-	a.add('|-'.repeat(tab) + '$i.name [${i.level.str()}]')
+	a.add('|-'.repeat(tab) + '$i.name [$i.level.str()]')
 	for ii in i.sub {
 		ii.print(mut a, tab + 1)
 	}
