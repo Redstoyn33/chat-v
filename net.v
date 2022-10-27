@@ -79,6 +79,7 @@ fn (mut n Net) start() {
 					else {}
 				}
 			}
+			else {}
 		}
 		if usize(n.sreq) != 0 {
 			if n.sreq.time < time.now().unix_time() {
@@ -88,8 +89,10 @@ fn (mut n Net) start() {
 						name: n.name
 						sub: n.sreq.infos
 					}
+					resp := Com(Resp{info})
 					select {
-						n.inp <- Resp{info} {}
+						n.inp <- resp {}
+						else {}
 					}
 					n.sreq = &ScanReq(0)
 				} else {
@@ -103,9 +106,19 @@ fn (mut n Net) start() {
 				}
 			}
 		}
-		n.read(n.mconn)
+		if usize(n.mconn) != 0 {
+			n.read(n.mconn)
+		}
+
 		for con in n.conns {
 			n.read(con)
+		}
+		select {
+			c := <-n.new_conn {
+				n.conns << c
+				n.info('new conn')
+			}
+			else {}
 		}
 	}
 }
@@ -116,21 +129,23 @@ fn (mut n Net) read(con &TcpConn) {
 	match buf[0] {
 		0x00 {
 			mut ns := []u8{len: 1}
-			con.read(mut ns) or { return }
+			con.read(mut ns) or {}
 			mut name := []u8{len: int(ns[0])}
-			con.read(mut name) or { return }
+			con.read(mut name) or {}
 			mut ts := []u8{len: 1}
-			con.read(mut buf) or { return }
+			con.read(mut ts) or {}
 			mut text := []u8{len: int(ts[0])}
-			con.read(mut text) or { return }
+			con.read(mut text) or {}
 			mut ret := [u8(0x00)]
 			ret << ns
 			ret << name
 			ret << ts
 			ret << text
-			n.write2other(ret, con)
+			n.write2other(ret, con.sock.handle)
+			msg := Com(Msg{name.bytestr(), text.bytestr()})
 			select {
-				n.inp <- Msg{name.bytestr(), text.bytestr()} {}
+				n.inp <- msg {}
+				else {}
 			}
 		}
 		0x01 {
@@ -138,7 +153,7 @@ fn (mut n Net) read(con &TcpConn) {
 				return
 			}
 			mut timeb := []u8{len: 4}
-			con.read(mut timeb) or { return }
+			con.read(mut timeb) or {}
 			mut time := i64(0)
 			time |= i64(timeb[0]) << 8 * 3
 			time |= i64(timeb[1]) << 8 * 2
@@ -151,7 +166,7 @@ fn (mut n Net) read(con &TcpConn) {
 				time: time
 			}
 			timen := [u8(0x01), u8(time >> 8 * 3), u8(time >> 8 * 2), u8(time >> 8), u8(time)]
-			n.write2other(timen, con)
+			n.write2other(timen, con.sock.handle)
 		}
 		0x02 {
 			if usize(n.sreq) == 0 {
@@ -171,20 +186,31 @@ fn (i Info) tobytes() []u8 {
 }
 
 fn (mut n Net) write2all(bytes []u8) {
-	n.mconn.write(bytes) or {}
+	if usize(n.mconn) != 0 {
+		n.mconn.write(bytes) or {}
+	}
+
 	for mut c in n.conns {
 		c.write(bytes) or {}
 	}
 }
 
-fn (mut n Net) write2other(bytes []u8, con &TcpConn) {
-	if usize(n.mconn) != usize(con) {
+fn (mut n Net) write2other(bytes []u8, han int) {
+	if usize(n.mconn) != 0 && n.mconn.sock.handle != han {
 		n.mconn.write(bytes) or {}
 	}
 	for mut c in n.conns {
-		if usize(c) == usize(con) {
+		if c.sock.handle == han {
 			continue
 		}
 		c.write(bytes) or {}
+	}
+}
+
+fn (mut n Net) info(s string) {
+	msg := Com(Msg{'sys', s})
+	select {
+		n.inp <- msg {}
+		else {}
 	}
 }

@@ -4,19 +4,19 @@ import os
 
 struct Chat {
 mut:
-	tui       &tui.Context = unsafe { 0 }
-	name      string
-	format    string
-	text      string
-	buf       &LoopArr
-	inp       chan Com
-	out       chan Com
-	level     u8
+	tui    &tui.Context = unsafe { 0 }
+	name   string
+	format string
+	text   string
+	buf    &LoopArr
+	inp    chan Com
+	out    chan Com
+	level  u8
 }
 
 fn (mut c Chat) start() {
 	c.tui = tui.init(
-		user_data: c
+		user_data: &c
 		event_fn: event
 		frame_fn: frame
 		hide_cursor: false
@@ -65,8 +65,11 @@ fn event(e &tui.Event, x voidptr) {
 								c.format = c.text[8..]
 							}
 						} else {
-							d := Msg{c.name, c.text}
-							c.out.try_push(d)
+							d := Com(Msg{c.name, c.text})
+							select {
+								c.out <- d {}
+								else {}
+							}
 							c.buf.add(c.format.replace_each(['%n', c.name, '%m', c.text]))
 						}
 					}
@@ -101,11 +104,11 @@ fn frame(x voidptr) {
 		}
 	}
 	c.tui.clear()
-	for i in 0 .. c.tui.window_height {
+	for i in 1 .. c.tui.window_height {
 		if c.buf.len <= i {
 			break
 		}
-		c.tui.draw_text(0, c.tui.window_height - 1 - i, c.buf.get(c.buf.len - 1 - i))
+		c.tui.draw_text(0, c.tui.window_height - 1 - i, c.buf.get(c.buf.len - 1 + i))
 	}
 	c.tui.draw_text(0, c.tui.window_height, c.text)
 	c.tui.flush()
@@ -121,7 +124,7 @@ fn (i Info) print(mut a LoopArr, tab int) {
 struct LoopArr {
 	len int = 10
 mut:
-	arr []string = []string{cap: 10}
+	arr []string = []string{len: 10}
 	pos int      = 0
 }
 
