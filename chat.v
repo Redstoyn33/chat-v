@@ -48,7 +48,7 @@ fn event(e &tui.Event, x voidptr) {
 				}
 				match c.text {
 					'/help' {
-						c.buf.add('Гуманитарная помощь:')
+						c.buf.add('/help  /level  /scan  /format')
 					}
 					'/level' {
 						c.buf.add('Уровень $c.level')

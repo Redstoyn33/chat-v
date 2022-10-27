@@ -7,7 +7,7 @@ fn main() {
 	mconn := if addr == '' {
 		&TcpConn(unsafe { 0 })
 	} else {
-		nett.dial_tcp(addr + ':65555') or {
+		nett.dial_tcp(addr + ':62352') or {
 			os.input('Не удалось подключится')
 			exit(1)
 		}
@@ -55,12 +55,13 @@ fn main() {
 	}
 	mut accept := &Accept{
 		new_conn: new_conn
-		l: nett.listen_tcp(.ip, ':65555') or {
+		l: nett.listen_tcp(.ip, ':62352') or {
 			os.input('Ошибка хостинга')
 			exit(4)
 		}
 		level: level
 	}
+	println("Запуск")
 	go net.start()
 	go accept.start()
 	chat.start()
