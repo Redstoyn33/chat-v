@@ -107,7 +107,6 @@ fn (mut n Net) start() {
 		for con in n.conns {
 			n.read(con)
 		}
-
 	}
 }
 
@@ -124,8 +123,7 @@ fn (mut n Net) read(con &TcpConn) {
 			con.read(mut buf) or { return }
 			mut text := []u8{len: int(ts[0])}
 			con.read(mut text) or { return }
-			mut ret := []u8{}
-			ret << 0x00
+			mut ret := [u8(0x00)]
 			ret << ns
 			ret << name
 			ret << ts
@@ -142,9 +140,9 @@ fn (mut n Net) read(con &TcpConn) {
 			mut timeb := []u8{len: 4}
 			con.read(mut timeb) or { return }
 			mut time := i64(0)
-			time |= timeb[0] << 8 * 3
-			time |= timeb[1] << 8 * 2
-			time |= timeb[2] << 8
+			time |= i64(timeb[0]) << 8 * 3
+			time |= i64(timeb[1]) << 8 * 2
+			time |= i64(timeb[2]) << 8
 			time |= timeb[3]
 			time -= 3
 			n.sreq = &ScanReq{
@@ -152,14 +150,13 @@ fn (mut n Net) read(con &TcpConn) {
 				all: u8(n.conns.len)
 				time: time
 			}
-			timen := [u8(0x01), u8(c.time >> 8 * 3), u8(c.time >> 8 * 2), u8(c.time >> 8), u8(c.time)]
+			timen := [u8(0x01), u8(time >> 8 * 3), u8(time >> 8 * 2), u8(time >> 8), u8(time)]
 			n.write2other(timen, con)
 		}
 		0x02 {
 			if usize(n.sreq) == 0 {
 				return
 			}
-			
 		}
 		else {}
 	}
