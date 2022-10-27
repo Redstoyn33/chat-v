@@ -55,7 +55,7 @@ fn main() {
 	}
 	mut accept := &Accept{
 		new_conn: new_conn
-		l: nett.listen_tcp(.ip, '65555') or {
+		l: nett.listen_tcp(.ip, ':65555') or {
 			os.input('Ошибка хостинга')
 			exit(4)
 		}
