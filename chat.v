@@ -54,7 +54,7 @@ fn event(e &tui.Event, x voidptr) {
 						c.buf.add('Уровень $c.level')
 					}
 					'/scan' {
-						d := Scan{time.now().unix_time()}
+						d := Scan{time.now().unix_time() + 30}
 						c.out.try_push(d)
 						c.buf.add('Начало скана')
 					}
