@@ -40,7 +40,7 @@ fn main() {
 		out: out
 		name: name
 	}
-	mut chat := Chat{
+	mut chat := &Chat{
 		name: name
 		format: '%n > %m'
 		text: ''
@@ -51,7 +51,6 @@ fn main() {
 		inp: inp
 		out: out
 		level: level
-		wait_scan: 120
 	}
 	mut accept := &Accept{
 		new_conn: new_conn

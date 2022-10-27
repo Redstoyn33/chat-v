@@ -12,7 +12,6 @@ mut:
 	inp       chan Com
 	out       chan Com
 	level     u8
-	wait_scan i64
 }
 
 fn (mut c Chat) start() {
